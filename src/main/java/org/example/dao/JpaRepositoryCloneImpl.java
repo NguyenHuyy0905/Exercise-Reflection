@@ -8,10 +8,7 @@ import org.example.common.consts.StringSql;
 import org.example.config.Datasource;
 
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +52,7 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
                 .append(idColumnName)
                 .append(StringSql.SPACE.val)
                 .append(StringSql.EQUAL.val)
+                .append(StringSql.SPACE.val)
                 .append(StringSql.QUESTION_MARK.val)
                 .append(StringSql.SEMI_COLON.val)
                 .toString();
@@ -113,7 +111,6 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
                 .append(StringSql.OFFSET.val)
                 .append(StringSql.SPACE.val)
                 .append(StringSql.QUESTION_MARK.val)
-                .append(StringSql.SPACE.val)
                 .append(StringSql.SEMI_COLON.val)
                 .toString();
         System.err.println(sql);
@@ -198,77 +195,58 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
     @Override
     public List<T> saveAll(List<T> list) {
         List<String> listColumnName = new ArrayList<>();
-        PreparedStatement preSt;
-        T t = list.get(0);
-        Class<?> clazz = t.getClass();
+
+        T element = list.get(0);
+        Class<?> clazz = element.getClass();
         Field[] fields = clazz.getDeclaredFields();
         for (Field f : fields) {
             f.setAccessible(true);
             Column columnAnnotation = f.getAnnotation(Column.class);
             if (columnAnnotation != null) listColumnName.add(columnAnnotation.columnName());
         }
-        String sql1 = new StringBuilder(StringSql.INSERT_INTO_CLAUSE.val)
+        StringBuilder sql = new StringBuilder()
+                .append(StringSql.INSERT_INTO_CLAUSE.val)
                 .append(StringSql.SPACE.val)
                 .append(tableName)
                 .append(StringSql.SPACE.val)
-                .append(StringSql.OPEN_PARENTHESIS.val)
-                .toString();
-        String sql2 = "";
+                .append(StringSql.OPEN_PARENTHESIS.val);
         int count = 0;
         for (String s : listColumnName) {
             if (count != 0) {
-                sql2 += ", ";
-                sql2 += s;
-            } else {sql2 += s;}
+                sql.append(", ").append(s);
+            } else {
+                sql.append(s);
+            }
             count++;
         }
-        String sql3 = new StringBuilder(StringSql.CLOSE_PARENTHESIS.val)
+        sql.append(StringSql.CLOSE_PARENTHESIS.val)
                 .append(StringSql.SPACE.val)
                 .append(StringSql.VALUES.val)
                 .append(StringSql.SPACE.val)
-                .append(StringSql.OPEN_PARENTHESIS.val)
-                .toString();
-        String sql4 = "";
+                .append(StringSql.OPEN_PARENTHESIS.val);
         count = 0;
         for (String s : listColumnName) {
             if (count != 0) {
-                sql4 += ", ?";
-            } else {sql4 += "?";}
+                sql.append(", ?");
+            } else {
+                sql.append("?");
+            }
             count++;
         }
-        String sql5 = new StringBuilder(StringSql.CLOSE_PARENTHESIS.val)
-                .append(StringSql.SEMI_COLON.val)
-                .toString();
-        String sql = sql1 + sql2 + sql3 + sql4 + sql5;
-        System.err.println(sql);
+        sql.append(StringSql.CLOSE_PARENTHESIS.val)
+                .append(StringSql.SEMI_COLON.val);
+        String SQL = sql.toString();
+//        System.err.println(SQL);
         Connection conn = Datasource.getConn();
+        PreparedStatement preSt;
         try {
-            preSt = conn.prepareStatement(sql);
+            preSt = conn.prepareStatement(SQL);
             conn.setAutoCommit(false);
-            for (T t1 : list) {
-                Class<?> eachClazz = t1.getClass();
-                Field[] newFields = eachClazz.getDeclaredFields();
-                System.out.println(t1);
+            for (T t : list) {
+//                Class<?> eachClazz = t.getClass();
+//                Field[] newFields = eachClazz.getDeclaredFields();
                 for (int index = 1; index <= listColumnName.size(); index++) {
-                    String fieldType = newFields[index].getType().getSimpleName();
-                    switch (fieldType) {
-                        case "int":
-                            preSt.setInt(index, (int) fields[index].get(t1));
-                            break;
-                        case "long":
-                            preSt.setLong(index, (long) fields[index].get(t1));
-                            break;
-                        case "float":
-                            preSt.setFloat(index, (float) fields[index].get(t1));
-                            break;
-                        case "double":
-                            preSt.setDouble(index, (double) fields[index].get(t1));
-                            break;
-                        case "String":
-                            preSt.setString(index, (String) fields[index].get(t1));
-                            break;
-                        // More case....
-                    }
+                        preSt.setObject(index, fields[index].get(t));
                 }
                 preSt.addBatch();
             }

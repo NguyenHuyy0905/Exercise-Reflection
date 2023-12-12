@@ -16,10 +16,10 @@ public class ProductRepository extends JpaRepositoryCloneImpl<Product, Long> {
     }
     @Override
     protected List<Product> rowMapper(ResultSet rs) {
-        List<Product> students = new ArrayList<>();
+        List<Product> productList = new ArrayList<>();
         try {
             while (rs.next()){
-                students.add(Product.builder()
+                productList.add(Product.builder()
                         .id(rs.getLong("id"))
                         .name(rs.getString("name"))
                         .price(rs.getDouble("price"))
@@ -29,6 +29,6 @@ public class ProductRepository extends JpaRepositoryCloneImpl<Product, Long> {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        return students;
+        return productList;
     }
 }

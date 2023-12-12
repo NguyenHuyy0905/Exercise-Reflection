@@ -3,6 +3,7 @@ package org.example.model;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 import org.example.common.annotations.Column;
 import org.example.common.annotations.Id;
 import org.example.common.annotations.Table;
@@ -22,4 +23,18 @@ public class Product {
     private double price;
     @Column(columnName = "createAt", type = DataType.DATE)
     private Date createAt;
+    public Product(String name, double price) {
+        this.name = name;
+        this.price = price;
+        this.createAt = new Date(System.currentTimeMillis());
+    }
+    @Override
+    public String toString() {
+        return "Product{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", price=" + price +
+                ", createAt=" + createAt +
+                "}\n";
+    }
 }
