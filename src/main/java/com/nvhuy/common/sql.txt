@@ -1,0 +1,17 @@
+DROP DATABASE IF EXISTS reflection;
+
+CREATE DATABASE reflection;
+
+USE reflection;
+
+CREATE TABLE product (
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    name varchar(255),
+    price double,
+    createAt Date
+);
+
+CREATE TABLE feedback (
+    id bigint PRIMARY KEY AUTO_INCREMENT,
+    content text
+);
