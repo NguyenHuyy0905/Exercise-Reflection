@@ -16,6 +16,7 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
     private String tableName;
     private String idColumnName;
     private StatementUtils<T> statementUtils;
+    private List<String> listColumns;
     protected abstract List<T> rowMapper(ResultSet rs);
     public JpaRepositoryCloneImpl(Class<?> clazz) {
         this.clazz = clazz;
@@ -24,6 +25,7 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
         this.tableName = DbGetter.getTableName(clazz);
         this.idColumnName = DbGetter.getIdColumnName(clazz);
         this.statementUtils = new StatementUtils<>();
+        this.listColumns = DbGetter.getListColumns(fields);
     }
 
     @Override
@@ -35,11 +37,11 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
             conn.setAutoCommit(false);
             preSt.setObject(1, id);
             ResultSet rs = preSt.executeQuery();
+            conn.commit();
             List<T> data = rowMapper(rs);
             if(data != null && data.size() > 0){
                 return data.get(0);
             }
-            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (Exception e){
@@ -76,11 +78,11 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
             preSt.setInt(1,limit);
             preSt.setInt(2,offset);
             ResultSet rs = preSt.executeQuery();
+            conn.commit();
             List<T> data = rowMapper(rs);
             if(data != null && data.size() > 0){
                 return data;
             }
-            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (Exception e){
@@ -89,7 +91,6 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
         return null;
     };
     public T save(T t) {
-        List<String> listColumns = DbGetter.getListColumns(fields);
         String SQL = SqlBuilder.SqlInsert(tableName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
@@ -108,16 +109,13 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
 
     @Override
     public List<T> saveAll(List<T> list) {
-        List<String> listColumns = DbGetter.getListColumns(fields);
         String SQL = SqlBuilder.SqlInsert(tableName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
             for (T t : list) {
-                for (int index = 1; index <= listColumns.size(); index++) {
-                    preSt.setObject(index, fields[index].get(t));
-                }
+                statementUtils.setValues(listColumns, preSt, fields, t);
                 preSt.addBatch();
             }
             preSt.executeBatch();
@@ -131,15 +129,12 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
     }
 
     public T update(ID id, T t) {
-        List<String> listColumns = DbGetter.getListColumns(fields);
         String SQL = SqlBuilder.SqlUpdate(tableName, idColumnName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
-            for (int index = 1; index <= listColumns.size(); index++) {
-                preSt.setObject(index, fields[index].get(t));
-            }
+            statementUtils.setValues(listColumns, preSt, fields, t);
             preSt.setObject(listColumns.size() + 1, id);
             preSt.executeUpdate();
             conn.commit();
