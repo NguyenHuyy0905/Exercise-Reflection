@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GetComponent {
+public class GetDBElement {
     private static String idColumnName;
     public static String getTableName(Class<?> clazz) {
         Table tableAnotation  = (Table) clazz.getAnnotation(Table.class);
@@ -28,7 +28,7 @@ public class GetComponent {
             if (idAnnotation != null) idColumnName = idAnnotation.columnName();
         }
         if (StringUtils.isEmpty(idColumnName)) {
-//            throw new Exception();
+            // throw new Exception();
         }
         return idColumnName;
     };
