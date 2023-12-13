@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GetDBElement {
+public class DbGetter {
     private static String idColumnName;
     public static String getTableName(Class<?> clazz) {
         Table tableAnotation  = (Table) clazz.getAnnotation(Table.class);
@@ -33,7 +33,7 @@ public class GetDBElement {
         return idColumnName;
     };
 
-    public static List<String> getListColumnName(Field[] fields) {
+    public static List<String> getListColumns(Field[] fields) {
         List<String> listColumnName = new ArrayList<>();
         for (Field f : fields) {
             f.setAccessible(true);

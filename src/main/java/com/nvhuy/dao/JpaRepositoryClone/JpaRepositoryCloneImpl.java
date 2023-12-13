@@ -1,8 +1,9 @@
 package com.nvhuy.dao.JpaRepositoryClone;
 
 import com.nvhuy.config.DbConnection;
-import com.nvhuy.utils.GetDBElement;
+import com.nvhuy.utils.DbGetter;
 import com.nvhuy.utils.SqlBuilder;
+import com.nvhuy.utils.StatementUtils;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -11,14 +12,18 @@ import java.util.List;
 public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClone<T, ID> {
     private final String clazzName;
     private final Class<?> clazz;
+    private final Field[] fields;
     private String tableName;
     private String idColumnName;
+    private StatementUtils<T> statementUtils;
     protected abstract List<T> rowMapper(ResultSet rs);
     public JpaRepositoryCloneImpl(Class<?> clazz) {
         this.clazz = clazz;
+        this.fields = clazz.getDeclaredFields();
         this.clazzName = clazz.getSimpleName();
-        this.tableName = GetDBElement.getTableName(clazz);
-        this.idColumnName = GetDBElement.getIdColumnName(clazz);
+        this.tableName = DbGetter.getTableName(clazz);
+        this.idColumnName = DbGetter.getIdColumnName(clazz);
+        this.statementUtils = new StatementUtils<>();
     }
 
     @Override
@@ -84,17 +89,13 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
         return null;
     };
     public T save(T t) {
-        Class<?> clazz = t.getClass();
-        Field[] fields = clazz.getDeclaredFields();
-        List<String> listColumnName = GetDBElement.getListColumnName(fields);
-        String SQL = SqlBuilder.SqlInsert(tableName, listColumnName);
+        List<String> listColumns = DbGetter.getListColumns(fields);
+        String SQL = SqlBuilder.SqlInsert(tableName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
-            for (int index = 1; index <= listColumnName.size(); index++) {
-                preSt.setObject(index, fields[index].get(t));
-            }
+            statementUtils.setValues(listColumns, preSt, fields, t);
             preSt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -107,17 +108,14 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
 
     @Override
     public List<T> saveAll(List<T> list) {
-        T element = list.get(0);
-        Class<?> clazz = element.getClass();
-        Field[] fields = clazz.getDeclaredFields();
-        List<String> listColumnName = GetDBElement.getListColumnName(fields);
-        String SQL = SqlBuilder.SqlInsert(tableName, listColumnName);
+        List<String> listColumns = DbGetter.getListColumns(fields);
+        String SQL = SqlBuilder.SqlInsert(tableName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
             for (T t : list) {
-                for (int index = 1; index <= listColumnName.size(); index++) {
+                for (int index = 1; index <= listColumns.size(); index++) {
                     preSt.setObject(index, fields[index].get(t));
                 }
                 preSt.addBatch();
@@ -133,18 +131,16 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
     }
 
     public T update(ID id, T t) {
-        Class<?> clazz = t.getClass();
-        Field[] fields = clazz.getDeclaredFields();
-        List<String> listColumnName = GetDBElement.getListColumnName(fields);
-        String SQL = SqlBuilder.SqlUpdate(tableName, idColumnName, listColumnName);
+        List<String> listColumns = DbGetter.getListColumns(fields);
+        String SQL = SqlBuilder.SqlUpdate(tableName, idColumnName, listColumns);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
-            for (int index = 1; index <= listColumnName.size(); index++) {
+            for (int index = 1; index <= listColumns.size(); index++) {
                 preSt.setObject(index, fields[index].get(t));
             }
-            preSt.setObject(listColumnName.size() + 1, id);
+            preSt.setObject(listColumns.size() + 1, id);
             preSt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {

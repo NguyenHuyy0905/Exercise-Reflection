@@ -11,7 +11,7 @@ public class ProductTest {
         ProductServiceImpl service = new ProductServiceImpl();
         List<Product> productList = service.getAllProducts();
         System.err.println(productList);
-        Product product = service.getProductById(14L);
+        Product product = service.getProductById(56L);
         System.err.println(product);
 
         Product productSave = new Product("iphone11", 1000);
