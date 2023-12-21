@@ -7,7 +7,7 @@ import com.nvhuy.model.Product;
 import java.util.List;
 
 public class ProductServiceImpl implements ProductService {
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
     public ProductServiceImpl() {
         this.productRepository = new ProductRepository();
     }
@@ -44,5 +44,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void deleteProductById(Long id) {
         productRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Product> getProductsWithConditions(String whereClause) {
+        return productRepository.getWithConditions(whereClause);
     }
 }

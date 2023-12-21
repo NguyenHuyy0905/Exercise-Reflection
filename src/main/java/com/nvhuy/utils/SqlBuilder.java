@@ -18,11 +18,11 @@ public class SqlBuilder {
                 .append(StringSql.SPACE.val).append(StringSql.SEMI_COLON.val)
                 .toString();
     }
-    public static String SqlUpdate(String tableName, String idColumnName, List<String> listColumnName) {
+    public static String SqlUpdate(String tableName, String idColumnName, List<String> listColumnNameHaveValue) {
         return new StringBuilder(StringSql.UPDATE_CLAUSE.val)
                 .append(StringSql.SPACE.val).append(tableName)
                 .append(StringSql.SPACE.val).append(StringSql.SET.val)
-                .append(StringSql.SPACE.val).append(appendUpdateData(listColumnName))
+                .append(StringSql.SPACE.val).append(appendUpdateData(listColumnNameHaveValue))
                 .append(StringSql.SPACE.val).append(StringSql.WHERE.val)
                 .append(StringSql.SPACE.val).append(idColumnName)
                 .append(StringSql.SPACE.val).append(StringSql.EQUAL.val)
@@ -53,7 +53,7 @@ public class SqlBuilder {
     public static String SqlSelectAll(String tableName) {
         return new StringBuilder(StringSql.SELECT_CLAUSE.val)
                 .append(StringSql.SPACE.val).append(tableName)
-                .append(StringSql.SPACE.val).append(StringSql.SEMI_COLON.val)
+                .append(StringSql.SPACE.val)
                 .toString();
     }
     public static String SqlSelectById(String tableName, String idColumnName) {

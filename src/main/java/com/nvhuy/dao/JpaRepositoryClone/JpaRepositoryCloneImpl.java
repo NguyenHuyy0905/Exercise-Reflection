@@ -7,6 +7,7 @@ import com.nvhuy.utils.StatementUtils;
 
 import java.lang.reflect.Field;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClone<T, ID> {
@@ -129,13 +130,14 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
     }
 
     public T update(ID id, T t) {
-        String SQL = SqlBuilder.SqlUpdate(tableName, idColumnName, listColumns);
+        List<String> listColumnsHaveValue = DbGetter.getListColumnsHaveValue(t);
+        String SQL = SqlBuilder.SqlUpdate(tableName, idColumnName, listColumnsHaveValue);
         System.err.println(SQL);
         try (Connection conn = DbConnection.createConnection();
              PreparedStatement preSt = conn.prepareStatement(SQL)) {
             conn.setAutoCommit(false);
-            statementUtils.setValues(listColumns, preSt, fields, t);
-            preSt.setObject(listColumns.size() + 1, id);
+            statementUtils.setValues(listColumnsHaveValue, preSt, fields, t);
+            preSt.setObject(listColumnsHaveValue.size() + 1, id);
             preSt.executeUpdate();
             conn.commit();
         } catch (SQLException e) {
@@ -160,5 +162,26 @@ public abstract class JpaRepositoryCloneImpl<T, ID> implements JpaRepositoryClon
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public List<T> getWithConditions(String whereClause) {
+        String SQL = SqlBuilder.SqlSelectAll(tableName) + whereClause;
+        System.err.println(SQL);
+        try (Connection conn = DbConnection.createConnection();
+             PreparedStatement preSt = conn.prepareStatement(SQL)) {
+            conn.setAutoCommit(false);
+            ResultSet rs = preSt.executeQuery();
+            List<T> data = rowMapper(rs);
+            if(data != null && data.size() > 0){
+                return data;
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;
     }
 }

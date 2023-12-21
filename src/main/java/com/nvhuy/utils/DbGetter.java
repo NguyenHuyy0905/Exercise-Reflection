@@ -42,4 +42,24 @@ public class DbGetter {
         }
         return listColumnName;
     }
+
+    public static List<String> getListColumnsHaveValue(Object obj) {
+        Class<?> clazz = obj.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+        List<String> listColumnsHaveValue = new ArrayList<>();
+        for (Field field : fields) {
+            field.setAccessible(true);
+            Object value = null;
+            try {
+                value = field.get(obj);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            if (value == null || (value instanceof Number && ((Number) value).intValue() == 0)) {
+            } else {
+                listColumnsHaveValue.add(field.getName());
+            }
+        }
+        return listColumnsHaveValue;
+    }
 }

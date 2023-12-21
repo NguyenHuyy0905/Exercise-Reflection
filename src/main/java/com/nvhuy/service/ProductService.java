@@ -12,4 +12,6 @@ public interface ProductService {
     Product updateProduct(Long id, Product obj);
     List<Product> saveAllProducts(List<Product> list);
     void deleteProductById(Long id);
+
+    List<Product> getProductsWithConditions(String whereClause);
 }
